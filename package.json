@@ -11,7 +11,7 @@
     "setup": "node scripts/check-setup.js"
   },
   "engines": {
-    "node": ">=18"
+    "node": "20.x"
   },
   "keywords": [
     "google-sheets",
