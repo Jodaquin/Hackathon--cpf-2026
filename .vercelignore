@@ -1,0 +1,11 @@
+# Archivos que NUNCA deben subirse a Vercel (especialmente con `vercel` CLI).
+# En despliegues desde GitHub, además aplica .gitignore.
+
+.env
+.env.local
+credentials
+Plan.txt
+node_modules
+.git
+.vercel
+*.log

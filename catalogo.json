@@ -1,0 +1,50 @@
+{
+  "carreras": [
+    "Licenciatura en Enfermería",
+    "Licenciatura en Kinesiología",
+    "Licenciatura en Nutrición",
+    "Medicina",
+    "Farmacia",
+    "Obstetricia"
+  ],
+  "semestres": ["1°", "2°", "3°", "4°", "5°", "6°", "7°", "8°", "9°", "10°"],
+  "asignaturas": [
+    "Anatomía I",
+    "Anatomía II",
+    "Biología Celular",
+    "Fisiología Humana",
+    "Bioquímica",
+    "Microbiología",
+    "Farmacología",
+    "Enfermería Básica",
+    "Salud Pública",
+    "Práctica Profesional I",
+    "Práctica Profesional II",
+    "Seminario de Integración"
+  ],
+  "secciones": ["A", "B", "C", "D", "Única"],
+  "tipos": ["Teórica", "Práctica", "Teórico-práctica", "Laboratorio", "Examen"],
+  "docentes": [
+    "Dra. Ana Pérez",
+    "Dr. Martín Gómez",
+    "Lic. Laura Fernández",
+    "Lic. Diego Ramírez",
+    "Dra. Sofía Martínez",
+    "Lic. Carolina Ruiz",
+    "Dr. Pablo Herrera",
+    "Lic. Mariana López"
+  ],
+  "aulas": [
+    "Aula 101",
+    "Aula 102",
+    "Aula 103",
+    "Aula 201",
+    "Aula 202",
+    "Laboratorio 1",
+    "Laboratorio 2",
+    "Laboratorio de Informática",
+    "Auditorio",
+    "Virtual · Zoom",
+    "Virtual · Meet"
+  ]
+}
