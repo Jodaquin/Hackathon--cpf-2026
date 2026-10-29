@@ -4,7 +4,8 @@ require('dotenv').config({ quiet: true });
 
 const {
   estadoConfiguracion,
-  leerDemo,
+  leerDia,
+  leerBase,
   traducirErrorGoogle,
 } = require('./lib/sheets');
 const { fechaValida, hoyISO, formatearPestana } = require('./lib/fechas');
@@ -16,7 +17,7 @@ async function principal() {
 
   if (!fechaValida(fecha)) {
     console.error('\n✗ Fecha inválida. Usá el formato YYYY-MM-DD. Ejemplo:');
-    console.error('  node test-read.js 2026-03-09\n');
+    console.error('  node test-read.js 2026-10-26\n');
     process.exit(1);
   }
 
@@ -33,12 +34,16 @@ async function principal() {
   }
 
   try {
-    const datos = await leerDemo(fecha);
+    const [datos, base] = await Promise.all([leerDia(fecha), leerBase()]);
 
-    console.log(`\nPestaña: ${formatearPestana(fecha)}`);
+    console.log(`\nFecha: ${fecha}`);
+    console.log(`Pestaña esperada: ${formatearPestana(fecha)}`);
+    console.log(`Pestaña real: ${datos.pestana}`);
     console.log(`Estado: ${datos.existe ? 'encontrada' : 'todavía no existe'}`);
-    console.log(`Filas de datos: ${datos.total}\n`);
-    console.log(JSON.stringify(datos, null, 2));
+    console.log(`Filas de datos: ${datos.total}`);
+    console.log(`Clases en la tabla base para ese día: ${datos.baseDisponible}`);
+    console.log(`Tabla base: ${base.existe ? `${base.total} fila(s)` : 'no existe'}\n`);
+    console.log(JSON.stringify({ dia: datos, base }, null, 2));
     console.log('');
   } catch (error) {
     const traducido = traducirErrorGoogle(error);
