@@ -7,22 +7,40 @@ const express = require('express');
 const cors = require('cors');
 
 const catalogo = require('./catalogo.json');
-const { fechaValida, hoyISO } = require('./lib/fechas');
-const { ESTADOS, validarClase } = require('./lib/validacion');
+const {
+  fechaValida,
+  hoyISO,
+  etiquetaDia,
+  DIAS_BASE,
+  diaSemanaDeFecha,
+} = require('./lib/fechas');
+const {
+  ESTADOS,
+  VALORES_ESTADO,
+  validarClase,
+  validarCambios,
+} = require('./lib/validacion');
 const {
   estadoConfiguracion,
-  leerDemo,
+  leerDia,
+  leerBase,
   agregarClase,
-  obtenerTitulos,
+  actualizarClase,
+  prepararDia,
+  agregarBase,
+  importarBase,
+  eliminarBase,
+  obtenerHojas,
   traducirErrorGoogle,
 } = require('./lib/sheets');
+const { parsearImportacion } = require('./lib/importar');
 const { registrarAuditoria, estadoAuditoria } = require('./lib/auditoria');
 
 const app = express();
 
 app.disable('x-powered-by');
 app.use(cors());
-app.use(express.json({ limit: '64kb' }));
+app.use(express.json({ limit: '512kb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 function zonaHoraria() {
@@ -54,6 +72,22 @@ function asyncHandler(manejador) {
   };
 }
 
+function leerFecha(req, res) {
+  const fecha = String(
+    req.body?.fecha ?? req.query?.fecha ?? fechaDeHoy(),
+  ).trim();
+
+  if (!fechaValida(fecha)) {
+    res.status(400).json({
+      error: 'La fecha no es válida. Usá el formato YYYY-MM-DD.',
+      errores: { fecha: 'Elegí una fecha válida.' },
+    });
+    return null;
+  }
+
+  return fecha;
+}
+
 // ------------------------------------------------------------
 //  Estado de la configuración
 // ------------------------------------------------------------
@@ -73,30 +107,153 @@ app.get('/api/catalogo', (req, res) => {
   res.json({
     ...catalogo,
     estados: ESTADOS,
+    valoresEstado: VALORES_ESTADO,
+    diasInfo: DIAS_BASE.map((dia) => ({
+      valor: dia,
+      etiqueta: etiquetaDia(dia),
+    })),
   });
 });
 
 // ------------------------------------------------------------
-//  Demo: leer la pestaña del día y devolver JSON
+//  Leer la pestaña de un día
 // ------------------------------------------------------------
+app.get(
+  '/api/dia',
+  asyncHandler(async (req, res) => {
+    const fecha = leerFecha(req, res);
+    if (!fecha) return;
+
+    const resultado = await leerDia(fecha);
+    res.json({ configurado: true, ...resultado });
+  }),
+);
+
+// Alias viejo, para no romper enlaces de la demo anterior.
 app.get(
   '/api/demo-json',
   asyncHandler(async (req, res) => {
-    const fecha = String(req.query.fecha || fechaDeHoy()).trim();
+    const fecha = leerFecha(req, res);
+    if (!fecha) return;
 
-    if (!fechaValida(fecha)) {
-      return res.status(400).json({
-        error: 'La fecha no es válida. Usá el formato YYYY-MM-DD.',
-      });
-    }
-
-    const resultado = await leerDemo(fecha);
+    const resultado = await leerDia(fecha);
     res.json({ configurado: true, ...resultado });
   }),
 );
 
 // ------------------------------------------------------------
-//  Guardar una clase
+//  Tabla base semanal
+// ------------------------------------------------------------
+app.get(
+  '/api/base',
+  asyncHandler(async (req, res) => {
+    const resultado = await leerBase();
+    res.json({
+      configurado: true,
+      ...resultado,
+      dias: DIAS_BASE.map((dia) => ({
+        valor: dia,
+        etiqueta: etiquetaDia(dia),
+        total: resultado.porDia?.[dia] || 0,
+      })),
+    });
+  }),
+);
+
+app.post(
+  '/api/base',
+  asyncHandler(async (req, res) => {
+    const { ok, datos, errores } = validarClase(req.body || {}, { esBase: true });
+    if (!ok) {
+      return res.status(400).json({
+        error: 'Revisá los campos marcados.',
+        errores,
+      });
+    }
+
+    const resultado = await agregarBase(datos);
+    res.status(201).json({
+      ok: true,
+      mensaje: 'Clase agregada a la tabla base.',
+      ...resultado,
+    });
+  }),
+);
+
+app.post(
+  '/api/base/importar',
+  asyncHandler(async (req, res) => {
+    const texto = String(req.body?.texto || '').trim();
+    if (!texto) {
+      return res.status(400).json({
+        error: 'Pegá al menos una fila para importar.',
+      });
+    }
+
+    const parseado = parsearImportacion(texto);
+    if (!parseado.total) {
+      return res.status(400).json({
+        error: 'No se encontraron filas con datos.',
+      });
+    }
+
+    const validas = [];
+    const errores = [];
+
+    for (const fila of parseado.filas) {
+      const resultado = validarClase(fila.datos, { esBase: true });
+      if (resultado.ok) {
+        validas.push(resultado.datos);
+      } else {
+        errores.push({ linea: fila.linea, errores: resultado.errores });
+      }
+    }
+
+    if (!validas.length) {
+      return res.status(400).json({
+        error: 'Ninguna fila es válida. Revisá el formato.',
+        errores,
+      });
+    }
+
+    const resultado = await importarBase(validas);
+
+    res.status(201).json({
+      ok: true,
+      mensaje: `${resultado.agregadas} fila(s) agregadas a la tabla base.`,
+      ...resultado,
+      errores,
+    });
+  }),
+);
+
+app.delete(
+  '/api/base/:fila',
+  asyncHandler(async (req, res) => {
+    const resultado = await eliminarBase(req.params.fila);
+    res.json({ ok: true, mensaje: 'Fila eliminada de la tabla base.', ...resultado });
+  }),
+);
+
+// ------------------------------------------------------------
+//  Preparar el día desde la tabla base
+// ------------------------------------------------------------
+app.post(
+  '/api/dia/desde-base',
+  asyncHandler(async (req, res) => {
+    const fecha = leerFecha(req, res);
+    if (!fecha) return;
+
+    const resultado = await prepararDia(fecha);
+    res.status(resultado.creado ? 201 : 200).json({
+      ok: true,
+      ...resultado,
+    });
+  }),
+);
+
+// ------------------------------------------------------------
+//  Guardar una clase nueva en el día
 // ------------------------------------------------------------
 app.post(
   '/api/clases',
@@ -121,6 +278,7 @@ app.post(
       });
     }
 
+    datos.estado = datos.estado || 'P';
     const resultado = await agregarClase(fecha, datos);
 
     registrarAuditoria({
@@ -152,13 +310,58 @@ app.post(
 );
 
 // ------------------------------------------------------------
-//  Diagnóstico: listar pestañas existentes
+//  Actualizar presencia, aula, reemplazante u observación
+// ------------------------------------------------------------
+app.patch(
+  '/api/clases',
+  asyncHandler(async (req, res) => {
+    const cuerpo = req.body || {};
+    const fecha = String(cuerpo.fecha || '').trim();
+
+    if (!fechaValida(fecha)) {
+      return res.status(400).json({
+        error: 'La fecha no es válida.',
+        errores: { fecha: 'Elegí una fecha válida.' },
+      });
+    }
+
+    const fila = Number(cuerpo.fila);
+    if (!Number.isInteger(fila) || fila < 2) {
+      return res.status(400).json({
+        error: 'La fila no es válida.',
+        errores: { fila: 'La fila indicada no es válida.' },
+      });
+    }
+
+    const { ok, datos, errores } = validarCambios(cuerpo);
+    if (!ok) {
+      return res.status(400).json({
+        error: 'No se pudo actualizar la clase.',
+        errores,
+      });
+    }
+
+    const resultado = await actualizarClase(fecha, fila, datos);
+    res.json({
+      ok: true,
+      mensaje: 'Clase actualizada.',
+      ...resultado,
+    });
+  }),
+);
+
+// ------------------------------------------------------------
+//  Diagnóstico
 // ------------------------------------------------------------
 app.get(
   '/api/pestanas',
   asyncHandler(async (req, res) => {
-    const pestanas = await obtenerTitulos();
-    res.json({ total: pestanas.length, pestanas });
+    const hojas = await obtenerHojas();
+    res.json({
+      total: hojas.length,
+      pestanas: hojas.map((hoja) => hoja.titulo),
+      diaSemanaHoy: diaSemanaDeFecha(fechaDeHoy()),
+    });
   }),
 );
 
