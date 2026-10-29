@@ -725,6 +725,7 @@ function aplicarEstadoFila(tr, nuevoEstado) {
   const checkbox = tr.querySelector('[data-campo="presente"]');
   const select = tr.querySelector('[data-campo="estado"]');
   const reemplazo = tr.querySelector('[data-campo="reemplazante"]');
+  const pendiente = tr.querySelector('.estado-pendiente');
 
   const presente = nuevoEstado === 'P';
   if (checkbox) checkbox.checked = presente;
@@ -740,6 +741,11 @@ function aplicarEstadoFila(tr, nuevoEstado) {
       reemplazo.value = '';
       if (registro) registro.reemplazante = '';
     }
+  }
+
+  // Ocultar el badge "Sin marcar" en cuanto se asigna cualquier estado
+  if (pendiente && nuevoEstado !== '') {
+    pendiente.hidden = true;
   }
 
   tr.dataset.estado = nuevoEstado;
@@ -781,12 +787,12 @@ async function guardarCampoFila(tr, campo, valor) {
   const input = tr.querySelector(`[data-campo="${campo}"]`);
   if (!registro || !input) return;
 
-  const nuevo = String(valor ?? '').trim();
+  let nuevo = String(valor ?? '').trim();
   if (campo === 'aula') {
     // El servidor guarda el aula en mayúsculas; nos quedamos en el mismo formato.
     nuevo = nuevo.toUpperCase();
   }
-  if (nuevo === String(input.dataset.original ?? '')) return;
+  if (nuevo === String(input.dataset.original ?? '').trim()) return;
 
   marcarGuardando(tr, true);
 
