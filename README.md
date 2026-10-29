@@ -60,19 +60,30 @@ Las columnas se usan siempre **en este orden exacto**: `N`, `SEMESTRE`, `CARRERA
 - **Semestres:** siempre se guardan como `1º`, `3º`, `5º`, etc. Lo acepta la app y
   escribe el mismo formato de siempre, sin cambiar los tipos.
 - **Estados:** solo se usan los códigos `P`, `A`, `AA` y `R`.
+- **Estado vacío = pendiente:** una clase sin estado no se lee como presente ni
+  ausente. Es **pendiente** (“sin marcar”) hasta que se registre la llegada del
+  docente al aula.
 - **Carreras, secciones, tipos y aulas:** en mayúsculas (sin tildes en el código).
 - **Horas:** siempre `HH:MM`, por ejemplo `07:30`.
-- **Una clase sin estado se lee como `P` (Presente)**, porque “estar presente” es
-  el caso habitual.
+- **Una clase sin estado se lee como `pendiente`** (vacío): no es presente ni
+  ausente hasta que se marque. La presencia se registra cuando el docente entra al
+  aula.
 
 ### Estado
 
 | Código | Significado | Comentario |
 |--------|-------------|------------|
-| `P` | **Presente** | La clase se dictó. Es el valor por defecto. |
+| `P` | **Presente** | El docente marcó que entró al aula y la clase se dictó. |
 | `A` | **Ausente** | El docente no asistió y no avisó. |
 | `AA` | **Ausente con aviso** | La ausencia se informó antes. |
 | `R` | **Reemplazante** | Otra persona cubrió la clase. |
+
+### Estado inicial: pendiente
+
+Cuando se prepara un día desde la base, las clases se copian con estado **vacío /
+pendiente**. La app muestra el checkbox de “Presente” sin marcar (y el texto
+“Sin marcar”) para cada fila. El docente marca la presencia (tocando el checkbox)
+cuando entra al aula; recién ahí se escribe `P` (o `A` / `AA` / `R` si corresponde).
 
 El **reemplazante** es opcional: puede cargarse después, cuando la persona se
 confirma, aunque el estado ya sea `R`.
@@ -104,15 +115,40 @@ La fila de encabezado es la **fila 1**, los datos a partir de la fila 2.
 
 Contiene la estructura semanal (qué clase tiene cada día), sin estados.
 
+### Pestaña `DA` (disponibilidad de aulas)
+
+Aparte del horario base, la app crea una pestaña llamada **`DA`** para llevar el
+control de qué aulas están ocupados en cada horario. Columnas:
+
+| Columna | Letra | Campo |
+|---------|-------|-------|
+| A | `AULA` | Aula |
+| B | `DIA` | Día de la semana |
+| C | `HORA INICIO` | Hora inicio |
+| D | `HORA FIN` | Hora fin |
+
+- Cuando se le asigna un aula a una clase (formulario, tabla base, importación o
+  edición), la app **registra automáticamente** esa ocupación en la pestaña `DA`.
+- Si ya existe una ocupación para el mismo aula, día y horario, la app **rechaza la
+  carga con error 409**: no se puede cargar dos clases en el mismo aula al mismo
+  tiempo (solapamiento).
+
 ### Pestañas de día
 
 Nombre canónico: `"LUNES 26/10/2026"`, `"MIERCOLES 28/10/2026"`, etc. (mayúsculas,
 sin tildes). El nombre se genera a partir de la fecha elegida.
 
-Copia las clases de la base del día (estado `P`) en la pestaña nueva. Después se
-edita fila por fila el estado, el aula, la observación o el reemplazante.
+Copia las clases de la base del día (con estado **pendiente**) en la pestaña
+nueva. Después se edita fila por fila el estado, el aula, la observación o el
+reemplazante.
 
 Si la pestaña ya existe, no se vuelve a copiar: se editan las clases ya cargadas.
+
+**Al preparar un día nuevo se borra la pestaña del mismo día de la semana
+anterior.** Por ejemplo, al cargar el lunes de la semana que viene
+(`LUNES 2/11/2026`) se borra la pestaña del lunes anterior
+(`LUNES 26/10/2026`). Así la planilla no se va acumulando pestañas de días
+viejos.
 
 ---
 
@@ -250,7 +286,8 @@ npm start
 
 - Elegí la **fecha** de la clase.
 - La app muestra (o crea) la pestaña `LUNES 26/10/2026` para esa fecha.
-- Precargá el estado **Presente** por defecto; al desmarcarlo se muestran las
+- Precargá las clases en estado **pendiente** (“Sin marcar”); el docente marca la
+  presencia (checkbox) cuando entra al aula. Al desmarcarlo se muestran las
   opciones de ausencia o reemplazo.
 - Editá aula, observación y reemplazante directamente desde la tabla.
 - Usá **“Cargar desde tabla base”** para copiar las clases de esa semana desde la
@@ -264,8 +301,9 @@ En el panel **“Registro del día”**:
 2. Tocá **“Cargar desde tabla base”** (o usá una clase suelta con el formulario).
 3. Cada fila muestra: número, hora, asignatura/docente, aula, estado y
    observación.
-4. Cambiá el estado con el checkbox “Presente” (solo se muestra el selector de
-   ausencia cuando se está ausente) y completá el reemplazante si corresponde.
+4. Tocá el checkbox **“Presente”** para marcar la llegada del docente al aula (queda
+   `P`). Si la clase se va a dar sin el docente original, elegí ausente / aviso /
+   reemplazante. Y completá el reemplazante si corresponde.
 
 ---
 
