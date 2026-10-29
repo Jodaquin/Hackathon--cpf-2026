@@ -1019,6 +1019,15 @@ a {
   font-size: 0.74rem;
 }
 
+.estado-pendiente {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 6px;
+  color: var(--warn);
+  font-size: 0.72rem;
+  font-weight: 650;
+}
+
 .clase-row.is-saving td {
   background: #fffbeb;
 }
