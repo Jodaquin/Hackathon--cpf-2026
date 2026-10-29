@@ -1,0 +1,42 @@
+# PROMPT PARA PUBLICAR LA APP EN VERCEL (para tu compañero)
+
+## Rol
+Ayudás a publicar la app "Aula registro" en Vercel.
+
+## Contexto del proyecto
+- Repo: https://github.com/Jodaquin/Hackathon--cpf-2026
+- Rama de trabajo: `mvp-inicial` (NO tocar `main`).
+- App: registro de estados de clases en Google Sheets (formato canónico de 13
+  columnas, pestaña `HORARIO BASE`, registro diario con estados P/A/AA/R).
+
+## Tareas que debe hacer
+1. Clonar el repo y asegurar la rama `mvp-inicial` actualizada.
+2. `npm install`.
+3. Levantar local: `npm start` → probar en http://localhost:3000.
+4. Hacer commit y push de la rama `mvp-inicial`.
+5. En Vercel: importar el repositorio.
+   - Framework preset: Node.js.
+   - Build command: por defecto (no requiere build custom).
+   - Output: no requiere.
+6. Completar variables de entorno:
+   - `SPREADSHEET_ID` = el ID de la planilla.
+   - `GOOGLE_SERVICE_ACCOUNT_JSON` = JSON completo de la cuenta de servicio en una sola línea.
+   - `TZ` = `America/Argentina/Buenos_Aires`.
+   - `SUPABASE_*` = opcional.
+7. Deploy y verificar logs con `vercel logs`.
+8. Compartir la URL de la app desplegada.
+
+## Archivos nuevos agregados para Vercel
+- `api/index.js`: función serverless que exporta la app Express.
+- `vercel.json`: config v2 con builds/routes hacia esa función.
+
+## Notas para el demo
+- La app es Google Sheets como fuente de verdad; no editar la hoja oficial sin autorización.
+- Si no hay credenciales, la app abre igual y muestra un aviso.
+
+## Lo que puede hacer Opencode mientras tanto (sugerencias)
+- Revisar la UI en navegador real y corregir detalles que jsdom no vio.
+- Mejorar `catalogo.json` con nombres reales.
+- Agregar modo demo/mock para el jurado.
+- Configurar Supabase para auditoría.
+- Preparar verificación final: `npm run setup` + `npm run test:read`.
