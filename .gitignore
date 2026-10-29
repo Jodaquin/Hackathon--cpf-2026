@@ -1,0 +1,20 @@
+# Dependencias
+node_modules/
+
+# Variables de entorno y credenciales (NUNCA subir esto)
+.env
+.env.local
+credentials/
+*.pem
+*.key
+
+# Archivo de planificación con datos sensibles
+Plan.txt
+
+# Vercel
+.vercel
+
+# Sistema / editor
+.DS_Store
+*.log
+npm-debug.log*
