@@ -581,7 +581,7 @@ function renderizarDia() {
 }
 
 function filaDiaHtml(fila) {
-  const estado = fila.estado || 'P';
+  const estado = fila.estado || '';
   const presente = estado === 'P';
   const valorSelect = estado === 'P' ? 'A' : estado;
 
@@ -632,6 +632,7 @@ function filaDiaHtml(fila) {
           aria-label="Reemplazante de ${escaparAtributo(fila.asignatura)}"
           ${estado === 'R' ? '' : 'hidden'}
         />
+        ${estado === '' ? '<span class="estado-pendiente">Sin marcar</span>' : ''}
       </td>
       <td class="cell-obs">
         <input
@@ -663,7 +664,7 @@ function actualizarJsonDia() {
 function calcularResumen(filas) {
   const resumen = { P: 0, A: 0, AA: 0, R: 0, total: filas.length };
   for (const fila of filas) {
-    const estado = fila.estado || 'P';
+    const estado = fila.estado || '';
     if (resumen[estado] !== undefined) resumen[estado] += 1;
   }
   return resumen;
@@ -749,7 +750,7 @@ async function cambiarEstadoFila(tr, nuevoEstado) {
   const registro = obtenerRegistroDeFila(tr);
   if (!registro) return;
 
-  const anterior = registro.estado || 'P';
+  const anterior = registro.estado || '';
   if (anterior === nuevoEstado) return;
 
   aplicarEstadoFila(tr, nuevoEstado);

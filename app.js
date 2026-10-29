@@ -24,6 +24,7 @@ const {
   estadoConfiguracion,
   leerDia,
   leerBase,
+  leerAulas,
   agregarClase,
   actualizarClase,
   prepararDia,
@@ -232,6 +233,26 @@ app.delete(
   asyncHandler(async (req, res) => {
     const resultado = await eliminarBase(req.params.fila);
     res.json({ ok: true, mensaje: 'Fila eliminada de la tabla base.', ...resultado });
+  }),
+);
+
+// ------------------------------------------------------------
+//  Disponibilidad de aulas (pestaña "DA")
+// ------------------------------------------------------------
+app.get(
+  '/api/aulas',
+  asyncHandler(async (req, res) => {
+    const resultado = await leerAulas();
+    res.json({
+      configurado: true,
+      ...resultado,
+      porAula: resultado.filas.reduce((acumulado, fila) => {
+        const clave = fila.aula || 'SIN AULA';
+        acumulado[clave] = acumulado[clave] || [];
+        acumulado[clave].push(fila);
+        return acumulado;
+      }, {}),
+    });
   }),
 );
 
