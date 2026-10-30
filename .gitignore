@@ -18,3 +18,6 @@ Plan.txt
 .DS_Store
 *.log
 npm-debug.log*
+
+# Datos exportados de la planilla (no subir)
+idsemestreareaasignaturaseccion.csv
